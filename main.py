@@ -1,12 +1,25 @@
 from antlr4 import *
-from UrlLexer import UrlLexer
-from UrlParser import UrlParser
+from antlr4.tree.Trees import Trees
+from MiniCLexer import MiniCLexer
+from MiniCParser import MiniCParser
+import sys 
 
-input_text = InputStream(input('? '))
-lexer = UrlLexer(input_text)
-stream = CommonTokenStream(lexer)
-parser = UrlParser(stream)
+def main(argv):
+    if len(argv) < 2:
+        print("python ,<script> ,<arquivo>")
+        return
 
-tree = parser.url()
+    inputFile = FileStream(argv[1])
 
-print(tree.toStringTree(recog=parser))
+    lexer = MiniCLexer(inputFile)
+    stream = CommonTokenStream(lexer)
+    parser = MiniCParser(stream)
+
+    arvore = parser.program()
+
+
+    print(Trees.toStringTree(arvore, None, parser))
+
+    
+if __name__ == '__main__':
+    main(sys.argv)    
