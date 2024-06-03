@@ -1,0 +1,21 @@
+
+.ex{
+    display: flex;
+    flex-direction: row;
+}
+
+.blu{
+    background-color: blue;
+    width: 200px;
+    height: 200px;
+    margin: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.red{
+    background-color: red;
+    width: 100px;
+    height: 100px;
+}

@@ -1,0 +1,15 @@
+
+div{
+    height: 97vh;
+    width: 99vw;
+    background-color: aquamarine;
+}
+
+.dot {
+    height: 8px;
+    width: 8px;
+    border-radius: 4px;
+    background-color: blue;
+    position: absolute;
+   }
+   

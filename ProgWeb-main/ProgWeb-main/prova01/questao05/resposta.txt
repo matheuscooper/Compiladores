@@ -1,0 +1,14 @@
+Explicação correta
+Nota: 2.0
+
+Em javascript, ambos são operadores de igualdade,
+porém o operador "==" força os valores comparados
+a serem do mesmo tipo, enquanto o operador "==="
+verifica se os valores comparados são extritamente
+o mesmo literal, com mesmo tipo e mesmo valor.
+
+Um exempo é a comparação 1=="1"
+A resposta para essa comparação é verdadeiro, pois
+pois o operador converte "1" para 1.
+enquanto a comparação 1==="1" tem falso como resposta
+pois os valores são de tipos diferentes
