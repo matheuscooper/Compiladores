@@ -1,0 +1,20 @@
+
+
+
+TEXTO 50 1 "Qual o seu nome?"
+
+ESCOLHAUMA "Qual o seu sexo?"
+("Feminino", "Viadinho", "Trans")
+
+ESCOLHAVARIAS "O quanto eu sou idiota com meu melhor amigo?"
+("Muito", "Demais", "Bastante", "Muito mesmo", "Outros")
+
+ESCOLHAUMA "O que eu fiz para meu melhor amigo é imbecil?"
+("Sim", "Com certeza", "Sou uma lesa")
+
+MENU "O quanto meu melhor amigo é bom para mim ?"
+("Excelente", "Bom", "Ótimo")
+
+BOTAO "Como eu sou como amiga" "UMA FEIOSA !"
+
+TEXTO 40 3 "Escreva aqui seu pedido de desculpas !"
