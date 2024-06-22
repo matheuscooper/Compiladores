@@ -8,34 +8,33 @@ definition
     | function_definition ;
 
 data_definition
-    : 'int' declarator (',' declarator)* ';' ;
-    : 'char' declarator (',' declarator)* ';' ;
+    : ('int' | 'char') declarator (',' declarator)* ';' ;
 
 declarator
     : Identifier ;
 
 function_definition
-    : ('int' | 'char')? function_header function_body ; #parametro opcional
+    : ('int' | 'char')? function_header function_body ; // tipos de retorno int ou char
 
 function_header
     : declarator parameter_list ;
 
 parameter_list
-    : '(' (parameter_declaration)? ')' ;
+    : '(' (parameter_declaration (',' parameter_declaration)*)? ')' ;
 
 parameter_declaration
-    : 'int' declarator (',' parameter_declaration)* ;
-    : 'char' declarator (',' parameter_declaration)* ;
+    : ('int' | 'char') declarator ;
+
 function_body
     : '{' data_definition* statement* '}' ;
 
 statement
     : (expression? ';' 
-    | 'if' '(' expression ')' statement  [ ELSE statement ]
-    | 'while' '(' expression ')' statement)
+    | 'if' '(' expression ')' statement ( 'else' statement )?
+    | 'while' '(' expression ')' statement
     | 'break' ';'
     | 'continue' ';'
-    | 'return' expression? ';'
+    | 'return' expression? ';' ) ;
 
 expression
     : binary (',' binary)* ;
@@ -80,6 +79,8 @@ Identifier
 
 CONSTANT_INT
     : [0-9]+ ;
+## na anterior eu nao sabia que a constante era assim a gente ver isso no slide 4 de Semantica
+CONSTANT_CHAR
     : '\'' . '\'' ;
 
 WS
