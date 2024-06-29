@@ -125,8 +125,26 @@ class EvalMiniCVisitor(MiniCVisitor):
         l = list(ctx.getChildren())
         if len(l) > 1:
             #se só precisar validar o tipo da esquerda e da direita
-            
-
+            if ctx.Identifier():
+                i = ctx.Identifier().getText()
+                if i in self.symbol_table_escopo:
+                    if self.symbol_table_escopo[i] != self.visitBinary(l[2]):
+                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[2].getText()}'.", ctx)
+                        return False
+                else:
+                    if self.symbol_table[i] != self.visitBinary(l[2]):
+                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[2].getText()}'.", ctx)
+                        return False
+                return True
+            else:
+                if ctx.unary():
+                    return self.visitUnary(ctx.unary())
+                else:
+                    if self.visitBinary(l[1]) != self.visitBinary(l[2]):
+                        self.add_error(f"Error: Type mismatch in expression'{l[1].getText()}' and '{l[2].getText()}'.", ctx)
+                        return False
+                    else:
+                        return True
             """
             Se precisar validar q as variaveis são inteiras:
             if l[1] == "+=" or l[1] == "-=" or l[1] =="/="or l[1] == "*=" or l[1] == "+" or l[1] =="-" or l[1] == "*" or l[1] =="/" or l[1] == "%" or l[1] =="%=":
