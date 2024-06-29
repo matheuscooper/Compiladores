@@ -1,2 +1,4 @@
-int a = 1;
-char a = 2;
+int a, k, d;
+char b(int d, int e){
+    return d;
+}

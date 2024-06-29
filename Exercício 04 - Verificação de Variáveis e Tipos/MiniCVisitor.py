@@ -5,7 +5,10 @@ if "." in __name__:
 else:
     from MiniCParser import MiniCParser
 
+# This class defines a complete generic visitor for a parse tree produced by MiniCParser.
+
 class MiniCVisitor(ParseTreeVisitor):
+
     # Visit a parse tree produced by MiniCParser#program.
     def visitProgram(self, ctx:MiniCParser.ProgramContext):
         return self.visitChildren(ctx)
@@ -19,6 +22,7 @@ class MiniCVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by MiniCParser#data_definition.
     def visitData_definition(self, ctx:MiniCParser.Data_definitionContext):
         return self.visitChildren(ctx)
+
 
     # Visit a parse tree produced by MiniCParser#declarator.
     def visitDeclarator(self, ctx:MiniCParser.DeclaratorContext):
@@ -75,13 +79,18 @@ class MiniCVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MiniCParser#tipo.
+    def visitTipo(self, ctx:MiniCParser.TipoContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MiniCParser#argument_list.
     def visitArgument_list(self, ctx:MiniCParser.Argument_listContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by MiniCParser#type.
-    def visitType(self, ctx:MiniCParser.TypeContext):
+    # Visit a parse tree produced by MiniCParser#value.
+    def visitValue(self, ctx:MiniCParser.ValueContext):
         return self.visitChildren(ctx)
 
 

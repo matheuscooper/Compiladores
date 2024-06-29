@@ -134,6 +134,15 @@ class MiniCListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MiniCParser#tipo.
+    def enterTipo(self, ctx:MiniCParser.TipoContext):
+        pass
+
+    # Exit a parse tree produced by MiniCParser#tipo.
+    def exitTipo(self, ctx:MiniCParser.TipoContext):
+        pass
+
+
     # Enter a parse tree produced by MiniCParser#argument_list.
     def enterArgument_list(self, ctx:MiniCParser.Argument_listContext):
         pass
@@ -149,15 +158,6 @@ class MiniCListener(ParseTreeListener):
 
     # Exit a parse tree produced by MiniCParser#value.
     def exitValue(self, ctx:MiniCParser.ValueContext):
-        pass
-
-
-    # Enter a parse tree produced by MiniCParser#type.
-    def enterType(self, ctx:MiniCParser.TypeContext):
-        pass
-
-    # Exit a parse tree produced by MiniCParser#type.
-    def exitType(self, ctx:MiniCParser.TypeContext):
         pass
 
 

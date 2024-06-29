@@ -1,4 +1,5 @@
 from antlr4 import *
+from antlr4.tree.Trees import Trees
 from MiniCLexer import MiniCLexer
 from MiniCParser import MiniCParser
 from EvalMiniCVisitor import EvalMiniCVisitor
@@ -11,9 +12,9 @@ def main(argv):
     stream = CommonTokenStream(lexer)
     parser = MiniCParser(stream)
     arvore = parser.program()
+    print(Trees.toStringTree(arvore, None, parser))
     visitor = EvalMiniCVisitor()
     visitor.visitProgram(arvore)
-
     if visitor.erros:
         for e in visitor.erros:
             print(e)
