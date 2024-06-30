@@ -82,7 +82,8 @@ class EvalMiniCVisitor(MiniCVisitor):
             if isinstance(li, MiniCParser.Data_definitionContext):
                 self.symbol_table_escopo = self.visitData_definition(li, self.symbol_table_escopo)
             elif isinstance(li, MiniCParser.StatementContext):
-                self.visitStatement(li, tipo)
+                if li.getChildCount() >=1:
+                    self.visitStatement(li, tipo)
         return None
     
     def visitParameter_list(self, ctx: MiniCParser.Parameter_listContext):
@@ -102,34 +103,40 @@ class EvalMiniCVisitor(MiniCVisitor):
         return self.symbol_table_escopo
 
     def visitStatement(self, ctx: MiniCParser.StatementContext, tipo):
-        if ctx.expression():
-            self.visitExpression(ctx.expression())
-        if ctx.statement():
-            self.visitStatement(ctx.statement(), tipo)
-        if ctx.expression() :
-            v = 0
-            for r in ctx.getChildren():
-                if v == 1:
-                    rt = r.getText()
-                    ob = r
-                    break
-                if r.getText() == "return":
+        v = 0
+        if type(ctx) == list:
+            ctx = ctx[0]
+        if not ctx.isEmpty():
+            for c in ctx.getChildren():
+                if isinstance(c, MiniCParser.ExpressionContext):
+                    #print(f"c: {c.getText()} expression")
+                    self.visitExpression(ctx.expression())
+                    if v == 1:
+                        rt = c.getText()
+                        ob = c
+                elif isinstance(c, MiniCParser.StatementContext):
+                    #print(f"c: {c.getText()} statement")
+                    self.visitStatement(ctx.statement(), tipo)
+                if c.getText() =="return":
                     v = 1
-                
-            if v:
-                if rt != ";":
-                    if rt in self.symbol_table_escopo:
-                        if self.symbol_table_escopo[rt] != tipo:
+        else:
+            print(ctx.getChild(0))
+        if v:
+            if rt != ";":
+                if rt in self.symbol_table_escopo:
+                    if self.symbol_table_escopo[rt] != tipo:
+                        self.add_error(f"Error: Type mismatch in return of variable '{rt}'.", ctx)
+                elif rt in self.symbol_table:
+                    if self.symbol_table[rt] != tipo:
                             self.add_error(f"Error: Type mismatch in return of variable '{rt}'.", ctx)
-                    elif rt in self.symbol_table:
-                        if self.symbol_table[rt] != tipo:
-                                self.add_error(f"Error: Type mismatch in return of variable '{rt}'.", ctx)
-                        else:
-                            self.add_error(f"Error: Variable '{rt}' not declared.", ctx)
                     else:
-                        if tipo != self.visitExpression(ob):
-                            self.add_error(f"Error: Type mismatch in return of expression '{ob.getText()}'.", ctx)
-        return None
+                        self.add_error(f"Error: Variable '{rt}' not declared.", ctx)
+                else:
+                    if tipo != self.visitExpression(ob):
+                        self.add_error(f"Error: Type mismatch in return of expression '{ob.getText()}'.", ctx)
+
+                
+            return None
     
     def visitExpression(self, ctx: MiniCParser.ExpressionContext):
         t = ""
@@ -143,18 +150,21 @@ class EvalMiniCVisitor(MiniCVisitor):
         for b in ctx.binary():
             l.append(b.getText())
             lc.append(b)
+        
         #se só precisar validar o tipo da esquerda e da direita
         if ctx.Identifier():
             i = ctx.Identifier().getText()
+            e = [ei for ei in ctx.getChildren() if not isinstance(ei, MiniCParser.BinaryContext) and not isinstance(ei, MiniCParser.UnaryContext) and ei != ctx.Identifier()]
+            e = e[0]
             if i in self.symbol_table_escopo:
                 if self.symbol_table_escopo[i] != self.visitBinary(lc[0]):
-                    self.add_error(f"Error: Type mismatch in expressions '{i}' and '{l[0]}'.", ctx)
+                    self.add_error(f"Error: Type mismatch in expressions ('{i}' {e} '{l[0]}').", ctx)
                     return False
                 else:
                     return self.symbol_table_escopo[i]
             elif i in self.symbol_table:
                 if self.symbol_table[i] != self.visitBinary(lc[0]):
-                    self.add_error(f"Error: Type mismatch in expressions '{i}' and '{l[0]}'.", ctx)
+                    self.add_error(f"Error: Type mismatch in expressions ('{i}' {e} '{l[0]}').", ctx)
                     return False
                 else:
                     return self.symbol_table[i]
@@ -166,9 +176,11 @@ class EvalMiniCVisitor(MiniCVisitor):
             if ctx.unary():
                 return self.visitUnary(ctx.unary())
             else:
+                e = [ei for ei in ctx.getChildren() if not isinstance(ei, MiniCParser.BinaryContext) and not isinstance(ei, MiniCParser.UnaryContext) and ei != ctx.Identifier()]
+                e = e[0]
                 aux = self.visitBinary(lc[0])
                 if aux != self.visitBinary(lc[1]):
-                    self.add_error(f"Error: Type mismatch in expression'{l[0]}' and '{l[1]}'.", ctx)
+                    self.add_error(f"Error: Type mismatch in expression ('{l[0]}' {e} '{l[1]}').", ctx)
                     return False
                 else:
                     return aux

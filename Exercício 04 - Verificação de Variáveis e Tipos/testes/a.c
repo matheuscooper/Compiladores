@@ -9,6 +9,6 @@ int soma(int a, int b){
 char b(int l, int e){
     char k;
     int s;
-    k = soma(l, k);
+    while ((5+6)<k) s++;
     return k;
 }
