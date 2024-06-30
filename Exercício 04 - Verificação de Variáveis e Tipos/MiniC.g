@@ -8,34 +8,33 @@ definition
     | function_definition ;
 
 data_definition
-    : 'int' declarator (',' declarator)* ';' ;
-    : 'char' declarator (',' declarator)* ';' ;
+    : tipo declarator (',' declarator)* ';' ;
 
 declarator
     : Identifier ;
 
 function_definition
-    : ('int' | 'char')? function_header function_body ; #parametro opcional
+    : (tipo)? function_header function_body ;
 
 function_header
     : declarator parameter_list ;
 
 parameter_list
-    : '(' (parameter_declaration)? ')' ;
+    : '(' (parameter_declaration (',' parameter_declaration)*)? ')' ;
 
 parameter_declaration
-    : 'int' declarator (',' parameter_declaration)* ;
-    : 'char' declarator (',' parameter_declaration)* ;
+    : tipo declarator ;
+
 function_body
     : '{' data_definition* statement* '}' ;
 
 statement
-    : (expression? ';' 
-    | 'if' '(' expression ')' statement  [ ELSE statement ]
-    | 'while' '(' expression ')' statement)
+    : expression? ';'
+    | 'if' '(' expression ')' statement ('else' statement)?
+    | 'while' '(' expression ')' (statement)
     | 'break' ';'
     | 'continue' ';'
-    | 'return' expression? ';'
+    | 'return' expression? ';' ;
 
 expression
     : binary (',' binary)* ;
@@ -61,8 +60,8 @@ binary
     | unary ;
 
 unary
-    : '++' Identifier 
-    | '--' Identifier 
+    : Identifier '++' 
+    | Identifier '--' 
     | primary ;
 
 primary
@@ -72,14 +71,24 @@ primary
     | '(' expression ')'
     | Identifier '(' (argument_list)? ')' ;
 
+tipo
+    : 'int'
+    | 'char' ;
+
 argument_list
     : binary (',' binary)* ;
 
 Identifier
     : [a-zA-Z_][a-zA-Z0-9_]* ;
 
+value
+    : CONSTANT_INT
+    | CONSTANT_CHAR ;
+
 CONSTANT_INT
     : [0-9]+ ;
+
+CONSTANT_CHAR
     : '\'' . '\'' ;
 
 WS
