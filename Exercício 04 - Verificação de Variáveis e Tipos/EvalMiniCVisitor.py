@@ -11,7 +11,9 @@ class EvalMiniCVisitor(MiniCVisitor):
     def add_error(self, message, ctx):
         line = ctx.start.line
         column = ctx.start.column
-        self.erros.append(f"Line [{line}:{column}]: {message}")
+        e = f"Line [{line}:{column}]: {message}"
+        if e not in self.erros:
+            self.erros.append(e)
 
     def visitProgram(self, ctx:MiniCParser.ProgramContext):
         for li in ctx.definition():

@@ -3,7 +3,7 @@ char j;
 
 int soma(int a, int b){
     char c, j;
-    return 1;
+    return a + c;
 }
 
 char b(int l, int e){
