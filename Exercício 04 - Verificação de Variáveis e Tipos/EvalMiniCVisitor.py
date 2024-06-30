@@ -10,7 +10,8 @@ class EvalMiniCVisitor(MiniCVisitor):
     
     def add_error(self, message, ctx):
         line = ctx.start.line
-        self.erros.append(f"Line {line}: {message}")
+        column = ctx.start.column
+        self.erros.append(f"Line [{line}:{column}]: {message}")
 
     def visitProgram(self, ctx:MiniCParser.ProgramContext):
         for li in ctx.definition():
@@ -30,7 +31,7 @@ class EvalMiniCVisitor(MiniCVisitor):
         for n in ctx.declarator():
             nomes.append(n.getText())
         for nome in nomes:
-            if ctx.value():
+            """if ctx.value():
                 valor = ctx.value().getText()
                 #print(nome, valor, type(valor))
                 if tipo == 'int':
@@ -41,6 +42,7 @@ class EvalMiniCVisitor(MiniCVisitor):
                 elif tipo == 'char':
                     if valor[0] != "'" or valor[2] != "'" or len(valor) != 3:
                         self.add_error(f"Error: Type mismatch in initialization of variable '{nome}'.", ctx)
+            """
             if nome in table:
                 self.add_error(f"Error: Variable '{nome}' already declared.", ctx)
             else:
@@ -100,6 +102,7 @@ class EvalMiniCVisitor(MiniCVisitor):
             for r in ctx.getChildren():
                 if v == 1:
                     rt = r.getText()
+                    ob = r
                     break
                 if r.getText() == "return":
                     v = 1
@@ -114,49 +117,60 @@ class EvalMiniCVisitor(MiniCVisitor):
                                 self.add_error(f"Error: Type mismatch in return of variable '{rt}'.", ctx)
                         else:
                             self.add_error(f"Error: Variable '{rt}' not declared.", ctx)
+                    else:
+                        if tipo != self.visitExpression(ob):
+                            self.add_error(f"Error: Type mismatch in return of expression '{ob.getText()}'.", ctx)
         return None
     
     def visitExpression(self, ctx: MiniCParser.ExpressionContext):
+        t = ""
         for li in ctx.binary():
-            self.visitBinary(li)
-        return True
+            t = self.visitBinary(li)
+        return t
     
     def visitBinary(self, ctx: MiniCParser.BinaryContext):
-        l = list(ctx.getChildren())
-        if len(l) > 1:
-            #se só precisar validar o tipo da esquerda e da direita
-            if ctx.Identifier():
-                i = ctx.Identifier().getText()
+        l = []
+        lc = []
+        for b in ctx.binary():
+            l.append(b.getText())
+            lc.append(b)
+        #se só precisar validar o tipo da esquerda e da direita
+        if ctx.Identifier():
+            i = ctx.Identifier().getText()
+            if len(l)>1:
                 if i in self.symbol_table_escopo:
-                    if self.symbol_table_escopo[i] != self.visitBinary(l[2]):
-                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[2].getText()}'.", ctx)
-                        return False
-                else:
-                    if self.symbol_table[i] != self.visitBinary(l[2]):
-                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[2].getText()}'.", ctx)
-                        return False
-                return True
-            else:
-                if ctx.unary():
-                    return self.visitUnary(ctx.unary())
-                else:
-                    if self.visitBinary(l[1]) != self.visitBinary(l[2]):
-                        self.add_error(f"Error: Type mismatch in expression'{l[1].getText()}' and '{l[2].getText()}'.", ctx)
+                    if self.symbol_table_escopo[i] != self.visitBinary(lc[1]):
+                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[1]}'.", ctx)
                         return False
                     else:
-                        return True
+                        return self.symbol_table_escopo[i]
+                else:
+                    if self.symbol_table[i] != self.visitBinary(lc[1]):
+                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[1]}'.", ctx)
+                        return False
+                    else:
+                        self.symbol_table[i]
+        else:
+            if ctx.unary():
+                return self.visitUnary(ctx.unary())
+            else:
+                aux = self.visitBinary(lc[0])
+                if aux != self.visitBinary(lc[1]):
+                    self.add_error(f"Error: Type mismatch in expression'{l[0]}' and '{l[1]}'.", ctx)
+                    return False
+                else:
+                    return aux
             """
             Se precisar validar q as variaveis são inteiras:
             if l[1] == "+=" or l[1] == "-=" or l[1] =="/="or l[1] == "*=" or l[1] == "+" or l[1] =="-" or l[1] == "*" or l[1] =="/" or l[1] == "%" or l[1] =="%=":
                 return
             elif l[1] == "==" or l[1] == "!=" or l[1] ==">=" or l[i]
             """
-        return None
     
     def visitUnary(self, ctx: MiniCParser.UnaryContext):
         if ctx.Identifier():
             t = ctx.Identifier().getText()
-            if t not in self.symbol_table_escopo or t not in self.symbol_table:
+            if t not in self.symbol_table_escopo and t not in self.symbol_table:
                 self.add_error(f"Error: Variable '{t}' not declared.", ctx)
             else:
                 if t in self.symbol_table_escopo:
@@ -169,8 +183,8 @@ class EvalMiniCVisitor(MiniCVisitor):
     def visitPrimary(self, ctx: MiniCParser.PrimaryContext):
         if ctx.Identifier():
             t = ctx.Identifier().getText()
-            if len(ctx.getChildren() == 1):
-                if t not in self.symbol_table_escopo or t not in self.symbol_table:
+            if ctx.getChildCount() == 1:
+                if t not in self.symbol_table_escopo and t not in self.symbol_table:
                     self.add_error(f"Error: Variable '{t}' not declared.", ctx)
                 else:
                     if t in self.symbol_table_escopo:

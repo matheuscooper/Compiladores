@@ -8,7 +8,7 @@ definition
     | function_definition ;
 
 data_definition
-    : tipo declarator ('=' value)? (',' declarator)* ';' ;
+    : tipo declarator (',' declarator)* ';' ;
 
 declarator
     : Identifier ;
