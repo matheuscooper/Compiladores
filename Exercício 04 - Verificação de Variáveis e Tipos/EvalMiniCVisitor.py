@@ -23,6 +23,7 @@ class EvalMiniCVisitor(MiniCVisitor):
             if isinstance(li, MiniCParser.Data_definitionContext):
                 self.visitData_definition(li, self.symbol_table)
             elif isinstance(li, MiniCParser.Function_definitionContext):
+                #self.symbol_table_escopo = {}
                 self.visitFunction_definition(li)
 
     def visitData_definition(self, ctx, table):
@@ -53,9 +54,11 @@ class EvalMiniCVisitor(MiniCVisitor):
     def visitFunction_definition(self, ctx):
         if ctx.tipo():
             tipo = ctx.tipo().getText()
+        
         self.symbol_table_escopo = {}
         self.visitFunction_header(ctx.function_header(), tipo)
         self.visitFunction_body(ctx.function_body(), tipo)
+        #print(self.symbol_table_escopo)
         return None
 
     def visitFunction_header(self, ctx: MiniCParser.Function_headerContext, tipo):
@@ -137,19 +140,22 @@ class EvalMiniCVisitor(MiniCVisitor):
         #se só precisar validar o tipo da esquerda e da direita
         if ctx.Identifier():
             i = ctx.Identifier().getText()
-            if len(l)>1:
-                if i in self.symbol_table_escopo:
-                    if self.symbol_table_escopo[i] != self.visitBinary(lc[1]):
-                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[1]}'.", ctx)
-                        return False
-                    else:
-                        return self.symbol_table_escopo[i]
+            if i in self.symbol_table_escopo:
+                if self.symbol_table_escopo[i] != self.visitBinary(lc[0]):
+                    self.add_error(f"Error: Type mismatch in expressions '{i}' and '{l[0]}'.", ctx)
+                    return False
                 else:
-                    if self.symbol_table[i] != self.visitBinary(lc[1]):
-                        self.add_error(f"Error: Type mismatch in expression'{i}' and '{l[1]}'.", ctx)
-                        return False
-                    else:
-                        self.symbol_table[i]
+                    return self.symbol_table_escopo[i]
+            elif i in self.symbol_table:
+                if self.symbol_table[i] != self.visitBinary(lc[0]):
+                    self.add_error(f"Error: Type mismatch in expressions '{i}' and '{l[0]}'.", ctx)
+                    return False
+                else:
+                    return self.symbol_table[i]
+            else:
+                self.add_error(f"Error: Variable '{i}' not declared.", ctx)
+                return False
+
         else:
             if ctx.unary():
                 return self.visitUnary(ctx.unary())
@@ -196,11 +202,8 @@ class EvalMiniCVisitor(MiniCVisitor):
                     self.add_error(f"Error: Function '{t}' not declared.", ctx)
                     return None
                 if ctx.argument_list():
-                    for a in ctx.argument_list():
-                        r = self.visitBinary(a)
-                        if r == False:
-                            self.add_error(f"Error: Type mismatch in function call of variable '{a.getText()}'.", ctx)
-                return self.function_table[t][0]
+                    self.visitArgument_list(ctx.argument_list())
+                    return self.function_table[t][0]
         elif ctx.CONSTANT_INT():
             return "int"
         elif ctx.CONSTANT_CHAR():
@@ -208,3 +211,12 @@ class EvalMiniCVisitor(MiniCVisitor):
         elif ctx.expression():
             #resolver
             return self.visitExpression(ctx.expression())
+        
+    def visitArgument_list(self, ctx: MiniCParser.Argument_listContext):
+        if ctx.binary():
+            for a in ctx.binary():
+                r = self.visitBinary(a)
+                if r == False:
+                    self.add_error(f"Error: Type mismatch in function call of variable '{a.getText()}'.", ctx)
+        return None
+    

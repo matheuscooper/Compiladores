@@ -3,12 +3,12 @@ char j;
 
 int soma(int a, int b){
     char c, j;
-    return c + j ;
+    return 1;
 }
 
 char b(int l, int e){
     char k;
     int s;
-    s = soma(l, e);
+    k = soma(l, e);
     return k;
 }
