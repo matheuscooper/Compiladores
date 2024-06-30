@@ -69,7 +69,11 @@ class EvalMiniCVisitor(MiniCVisitor):
         if nome in self.symbol_table or nome in self.function_table:
             self.add_error(f"Error: Variable '{nome}' already declared.", ctx)
         else:
-            self.function_table[nome] = (tipo, self.visitParameter_list(ctx.parameter_list()))            
+            aux = self.visitParameter_list(ctx.parameter_list())
+            aux1 = {}
+            for a in aux.keys():
+                aux1[a] = aux[a]
+            self.function_table[nome] = (tipo, aux1)  
         return None
 
     def visitFunction_body(self, ctx: MiniCParser.Function_bodyContext, tipo):
@@ -84,8 +88,8 @@ class EvalMiniCVisitor(MiniCVisitor):
     def visitParameter_list(self, ctx: MiniCParser.Parameter_listContext):
         if ctx.parameter_declaration():
             for li in ctx.parameter_declaration():
-                self.visitParameter_declarationn(li)
-        return None
+               a = self.visitParameter_declarationn(li)
+        return a
     
     def visitParameter_declarationn(self, ctx):
         tipo = ctx.tipo().getText()
@@ -204,7 +208,7 @@ class EvalMiniCVisitor(MiniCVisitor):
                     self.add_error(f"Error: Function '{t}' not declared.", ctx)
                     return None
                 if ctx.argument_list():
-                    self.visitArgument_list(ctx.argument_list())
+                    self.visitArgument_list(ctx.argument_list(), t)
                     return self.function_table[t][0]
         elif ctx.CONSTANT_INT():
             return "int"
@@ -214,11 +218,18 @@ class EvalMiniCVisitor(MiniCVisitor):
             #resolver
             return self.visitExpression(ctx.expression())
         
-    def visitArgument_list(self, ctx: MiniCParser.Argument_listContext):
+    def visitArgument_list(self, ctx: MiniCParser.Argument_listContext, t):
         if ctx.binary():
+            v = self.function_table[t][1].values()
+            v = [vi for vi in v]
+            tam = len(v)
+            i = 0
             for a in ctx.binary():
+                i +=1
                 r = self.visitBinary(a)
-                if r == False:
-                    self.add_error(f"Error: Type mismatch in function call of variable '{a.getText()}'.", ctx)
+                if r == False or r!=v[i-1]:
+                    self.add_error(f"Error: Type mismatch in function call of variable '{a.getText()}' in function '{t}'.", ctx)
+            if i!=tam:
+                self.add_error(f"Error: Argmument mismatch in function call '{t}'.", ctx)
         return None
     
