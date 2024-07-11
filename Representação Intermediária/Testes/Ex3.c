@@ -1,2 +1,5 @@
-if(a < b) then
- a = a +1;
+int main(){
+    int a, b;
+    if(a < b) else
+    a = a +1;
+}

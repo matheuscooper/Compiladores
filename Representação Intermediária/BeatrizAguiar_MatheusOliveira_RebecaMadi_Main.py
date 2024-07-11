@@ -2,7 +2,7 @@ from antlr4 import *
 from antlr4.tree.Trees import Trees
 from BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCLexer import BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCLexer
 from BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser import BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser
-from BeatrizAguiar_MatheusOliveira_RebecaMadi_EvalMiniCVisitor import EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor
+from BeatrizAguiar_MatheusOliveira_RebecaMadi_EvalMiniCVisitor import EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor, ThreeAddressCodeVisitor
 import sys 
 
 def main(argv):
@@ -16,8 +16,14 @@ def main(argv):
     visitor = EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor()
     visitor.visitProgram(arvore)
     if visitor.erros:
-        for e in visitor.erros:
-            print(e)
+        print("O códico contém erros!")
+    else:
+        print("\nTE:")
+        visitor = ThreeAddressCodeVisitor()
+        visitor.visit(arvore)
+        for v in visitor.code:
+            print(v)
+
 
     
 if __name__ == '__main__':

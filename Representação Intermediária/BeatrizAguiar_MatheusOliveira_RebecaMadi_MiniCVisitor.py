@@ -94,35 +94,5 @@ class BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#stat.
-    def visitStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#ifStat.
-    def visitIfStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.IfStatContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#whileStat.
-    def visitWhileStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.WhileStatContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#assignStat.
-    def visitAssignStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.AssignStatContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#exprStat.
-    def visitExprStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#expr.
-    def visitExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        return self.visitChildren(ctx)
-
-
 
 del BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser

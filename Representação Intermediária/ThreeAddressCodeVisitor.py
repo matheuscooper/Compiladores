@@ -57,7 +57,7 @@ class ThreeAddressCodeVisitor(SimpleLangVisitor):
         elif ctx.getChildCount() == 2:
             expr = self.visit(ctx.expr(0))
             temp = self.new_temp()
-            print(f"{temp} = !{expr}")
+            #print(f"{temp} = !{expr}")
             return temp
         elif ctx.Ident():
             return ctx.Ident().getText()

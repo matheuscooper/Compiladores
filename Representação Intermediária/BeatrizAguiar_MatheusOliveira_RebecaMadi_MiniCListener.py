@@ -161,59 +161,5 @@ class BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#stat.
-    def enterStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatContext):
-        pass
-
-    # Exit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#stat.
-    def exitStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatContext):
-        pass
-
-
-    # Enter a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#ifStat.
-    def enterIfStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.IfStatContext):
-        pass
-
-    # Exit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#ifStat.
-    def exitIfStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.IfStatContext):
-        pass
-
-
-    # Enter a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#whileStat.
-    def enterWhileStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.WhileStatContext):
-        pass
-
-    # Exit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#whileStat.
-    def exitWhileStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.WhileStatContext):
-        pass
-
-
-    # Enter a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#assignStat.
-    def enterAssignStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.AssignStatContext):
-        pass
-
-    # Exit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#assignStat.
-    def exitAssignStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.AssignStatContext):
-        pass
-
-
-    # Enter a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#exprStat.
-    def enterExprStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
-        pass
-
-    # Exit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#exprStat.
-    def exitExprStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
-        pass
-
-
-    # Enter a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#expr.
-    def enterExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        pass
-
-    # Exit a parse tree produced by BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser#expr.
-    def exitExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        pass
-
-
 
 del BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser

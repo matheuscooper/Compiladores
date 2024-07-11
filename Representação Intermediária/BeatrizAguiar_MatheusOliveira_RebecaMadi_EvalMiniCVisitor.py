@@ -29,7 +29,9 @@ class EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor(BeatrizAguiar_Ma
                 self.visitFunction_definition(li)
 
     def visitData_definition(self, ctx, table):
-        tipo = ctx.tipo().getText()
+        tipo = ""
+        if ctx.tipo():
+            tipo = ctx.tipo().getText()
         nomes = []
         for n in ctx.declarator():
             nomes.append(n.getText())
@@ -241,7 +243,7 @@ class EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor(BeatrizAguiar_Ma
             return "char"
         elif ctx.expression():
             #resolver
-            return self.visitExpression(ctx.expression())
+            return self.visitExpression(ctx.expression(), nm)
         
     def visitArgument_list(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.Argument_listContext, t):
         if ctx.binary():
@@ -259,74 +261,183 @@ class EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor(BeatrizAguiar_Ma
         return None
     
 class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor):
-    temp_count = 0
+    def __init__(self):
+        self.temp_count = 0
+        self.label_count = 0
+        self.values = []
+        self.code = []
 
     def new_temp(self):
         self.temp_count += 1
         return f"t{self.temp_count}"
-    
-    def visitProgram(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ProgramContext): ## Adaptar depois por que eu gerei sem compilar a
-        for stat in ctx.stat():
-            self.visit(stat)
-    
-    def visitStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatContext):
-        return self.visitChildren(ctx)
-    
-    def visitIfStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.IfStatContext):
-        cond = self.visit(ctx.expr())
-        then_label = self.new_temp()
-        end_label = self.new_temp()
-        print(f"if {cond} goto {then_label}\ngoto {end_label}\n{then_label}:\n")
-        self.visit(ctx.stat())
-        print(f"{end_label}:\n")
-        return
-    def visitWhileStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.WhileStatContext):
-        start_label = self.new_temp()
-        middle_label = self.new_temp()
-        end_label = self.new_temp()
-        print(f"{start_label}:\n")
-        cond = self.visit(ctx.expr())
-        print(f"if {cond} goto {middle_label}\ngoto {end_label}\n{middle_label}:\n")
-        self.visit(ctx.stat())
-        print(f"goto {start_label}\n{end_label}:\n")
-        return
-    
-    def visitAssignStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
-        value = self.visit(ctx.expr())
-        code = f"{ctx.Ident().getText()}= {value};"
-        print(code)
-        return code
-    
-    def visitExprStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
-        expr = self.visit(ctx.expr())
-        print(expr)
-        return expr
-    
-    def visitExpr(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        if len(ctx.expr()) == 2:
-            left = self.visit(ctx.expr(0))
-            right = self.visit(ctx.expr(1))
+
+    def new_label(self):
+        self.label_count += 1
+        return f"L{self.label_count}"
+
+    def visitDefinition(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.DefinitionContext):
+        if ctx.data_definition():
+            self.visit(ctx.data_definition())
+        elif ctx.function_definition():
+            self.visit(ctx.function_definition())
+
+    def visitData_definition(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.Data_definitionContext):
+        tipo = ctx.tipo().getText()
+        for declarator in ctx.declarator():
+            var_name = declarator.getText()
+            self.code.append(f"{var_name} : {tipo}")
+            
+
+    def visitFunction_definition(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.Function_definitionContext):
+        func_name = ctx.function_header().declarator().getText()
+        self.code.append(f"func {func_name} begin")
+        self.visit(ctx.function_body())
+        self.code.append(f"func {func_name} end")
+
+    def visitFunction_body(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.Function_bodyContext):
+        for data_def in ctx.data_definition():
+            self.visit(data_def)
+        for statement in ctx.statement():
+            self.visit(statement)
+
+    def visitStatement(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatementContext):
+        #print(ctx.getText())
+        
+        if ctx.getText()[0:2] == "if" or ctx.getText()[0:6]=="elseif":
+            self.visitIf(ctx)
+        elif ctx.getText()[0:5] == "while" or ctx.getText()[0:9]=="elsewhile":
+            self.visitWhile(ctx)
+        elif ctx.getText()[0:6] == "return" or ctx.getText()[0:10]=="elsereturn":
+            value = self.visit(ctx.expression())
+            self.code.append(f"return {value}")
+        else:
+            if ctx.expression():
+                self.visit(ctx.expression())
+
+    def visitIf(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatementContext):
+        cond = self.visit(ctx.expression())
+        label_true = self.new_temp()
+        label_end = self.new_temp()
+        self.code.append(f"if {cond} goto {label_true}")
+        self.code.append(f"goto {label_end}")
+        self.code.append(f"{label_true}:")
+        self.visit(ctx.statement(0))
+        #print("aaa", ctx.statement(0).getText())
+        i = 1
+        while(ctx.statement(i)):
+            label_else = self.new_label()
+            self.code.append(f"goto {label_else}")
+            self.code.append(f"{label_end}:")
+            self.visit(ctx.statement(i))
+            self.code.append(f"{label_else}:")
+            i += 1
+            
+        if i == 1:
+            self.code.append(f"{label_end}:")
+
+    def visitWhile(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatementContext):
+        label_begin = self.new_temp()
+        label_true = self.new_temp()
+        label_end = self.new_temp()
+        self.code.append(f"{label_begin}:")
+        cond = self.visit(ctx.expression())
+        self.code.append(f"if {cond} goto {label_true}")
+        self.code.append(f"goto {label_end}")
+        self.code.append(f"{label_true}:")
+        i = 0
+        while(ctx.statement(i)):
+            self.visit(ctx.statement(i))
+            i += 1
+        self.code.append(f"goto {label_begin}")
+        self.code.append(f"{label_end}:")
+
+    def visitExpression(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExpressionContext):
+        results = [self.visit(binary) for binary in ctx.binary()]
+        #print(results)
+        return results[0] if len(results) == 1 else results
+
+    def visitBinary(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.BinaryContext):
+        cs1 = [c for c in ctx.getChildren()]
+        cs = [csi.getText() for csi in cs1]
+        c0 = []
+        if '=' in cs[0]:
+            c0 = cs[0].split("=")
+            cs.pop(0)
+            c0 = [c0[0], "=", c0[1]]
+            cs = c0 + cs
+        if len(cs)>2:
+            #print(cs)
+            left = cs[0]
+            right = cs[2]
+            op = cs[1]
+            if op == "=":
+                #print(cs, ctx.getChild(2).getText())
+                
+                if len(cs)>3:
+                    #print([c.getText() for c in cs1])
+                    x1 = self.visit(cs1[0])
+                    x2 = self.visit(cs1[-1])
+                    #print(f"{left} = {x1} {cs[3]} {x2}")
+                    temp = self.new_temp()
+                    #print(temp, "=", cs[2])
+                    self.code.append(f"{temp} = {x1} {cs[3]} {x2}")
+                    self.code.append(f"{cs[0]} = {temp}")
+                    return temp
+                elif len(cs) == 3:
+                    #print(f"{left} = {self.visit(ctx.getChild(2))}")
+                    return self.visit(ctx.getChild(2))
+            else:
+                temp = self.new_temp()
+                #print(f"{temp} = {self.visit(cs1[0])} {op} {self.visit(cs1[2])}")
+                self.code.append(f"{temp} = {self.visit(cs1[0])} {op} {self.visit(cs1[2])}")
+                return temp
+        elif len(ctx.binary()) > 1:
+            #print("c2: ", cs)
+            left = self.visit(ctx.binary(0))
+            right = self.visit(ctx.binary(1))
             op = ctx.getChild(1).getText()
             temp = self.new_temp()
-            print(f"{temp} = {left} {op} {right}")
+            #print(f"{temp} = !{cs[0]}")
+            self.code.append(f"{temp} = {left} {op} {right}")
             return temp
-        elif ctx.getChildCount() == 2:
-            expr = self.visit(ctx.expr(0))
-            temp = self.new_temp()
-            print(f"{temp} = !{expr}")
-            return temp
-        elif ctx.Ident():
-            return ctx.Ident().getText()
-        elif ctx.INT():
-            return ctx.INT().getText()
         else:
-            return self.visit(ctx.expr(0))
-    
-    def visitIdentExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        return ctx.Ident().getText()
-    
-    def visitIntExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        return ctx.INT().getText()
-    
-    def visitParentExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
-        return self.visit(ctx.expr())
+           # print(cs)
+            return cs[0]
+
+    def visitUnary(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.UnaryContext):
+        if ctx.Identifier():
+            if ctx.getText()[-2:] == "++":
+                ident = ctx.Identifier().getText()
+                self.code.append(f"{ident} = {ident} + 1")
+                return ident
+            elif ctx.getText()[-2:] == "--":
+                ident = ctx.Identifier().getText()
+                self.code.append(f"{ident} = {ident} - 1")
+                return ident
+            else:
+                return ctx.Identifier().getText()
+        else:
+            return self.visit(ctx.primary())
+
+    def visitPrimary(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.PrimaryContext):
+        if ctx.Identifier():
+            if ctx.getChildCount() == 1:
+                return ctx.Identifier().getText()
+            else:
+                func_name = ctx.Identifier().getText()
+                args = self.visit(ctx.argument_list()) if ctx.argument_list() else []
+                arg_list = ", ".join(args)
+                temp = self.new_temp()
+                self.code.append(f"{temp} = call {func_name}({arg_list})")
+                return temp
+        elif ctx.CONSTANT_INT():
+            return ctx.CONSTANT_INT().getText()
+        elif ctx.CONSTANT_CHAR():
+            return ctx.CONSTANT_CHAR().getText()
+        elif ctx.expression():
+            return self.visit(ctx.expression())
+
+    def visitArgument_list(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.Argument_listContext):
+        k = [self.visit(binary) for binary in ctx.binary()]
+        print(k)
+        return k
