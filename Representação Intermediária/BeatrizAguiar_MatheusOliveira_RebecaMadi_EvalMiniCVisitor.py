@@ -258,3 +258,75 @@ class EvalBeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor(BeatrizAguiar_Ma
                 self.add_error(f"Error: Argmument mismatch in function call '{t}'.", ctx)
         return None
     
+class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisitor):
+    temp_count = 0
+
+    def new_temp(self):
+        self.temp_count += 1
+        return f"t{self.temp_count}"
+    
+    def visitProgram(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ProgramContext): ## Adaptar depois por que eu gerei sem compilar a
+        for stat in ctx.stat():
+            self.visit(stat)
+    
+    def visitStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.StatContext):
+        return self.visitChildren(ctx)
+    
+    def visitIfStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.IfStatContext):
+        cond = self.visit(ctx.expr())
+        then_label = self.new_temp()
+        end_label = self.new_temp()
+        print(f"if {cond} goto {then_label}\ngoto {end_label}\n{then_label}:\n")
+        self.visit(ctx.stat())
+        print(f"{end_label}:\n")
+        return
+    def visitWhileStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.WhileStatContext):
+        start_label = self.new_temp()
+        middle_label = self.new_temp()
+        end_label = self.new_temp()
+        print(f"{start_label}:\n")
+        cond = self.visit(ctx.expr())
+        print(f"if {cond} goto {middle_label}\ngoto {end_label}\n{middle_label}:\n")
+        self.visit(ctx.stat())
+        print(f"goto {start_label}\n{end_label}:\n")
+        return
+    
+    def visitAssignStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
+        value = self.visit(ctx.expr())
+        code = f"{ctx.Ident().getText()}= {value};"
+        print(code)
+        return code
+    
+    def visitExprStat(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprStatContext):
+        expr = self.visit(ctx.expr())
+        print(expr)
+        return expr
+    
+    def visitExpr(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
+        if len(ctx.expr()) == 2:
+            left = self.visit(ctx.expr(0))
+            right = self.visit(ctx.expr(1))
+            op = ctx.getChild(1).getText()
+            temp = self.new_temp()
+            print(f"{temp} = {left} {op} {right}")
+            return temp
+        elif ctx.getChildCount() == 2:
+            expr = self.visit(ctx.expr(0))
+            temp = self.new_temp()
+            print(f"{temp} = !{expr}")
+            return temp
+        elif ctx.Ident():
+            return ctx.Ident().getText()
+        elif ctx.INT():
+            return ctx.INT().getText()
+        else:
+            return self.visit(ctx.expr(0))
+    
+    def visitIdentExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
+        return ctx.Ident().getText()
+    
+    def visitIntExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
+        return ctx.INT().getText()
+    
+    def visitParentExpr(self, ctx:BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.ExprContext):
+        return self.visit(ctx.expr())
