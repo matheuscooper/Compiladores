@@ -381,11 +381,30 @@ class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisi
                     temp = self.new_temp()
                     #print(temp, "=", cs[2])
                     self.code.append(f"{temp} = {x1} {cs[3]} {x2}")
-                    self.code.append(f"{cs[0]} = {temp}")
+                    self.code.append(f"{cs[0][0]} = {temp}")
                     return temp
                 elif len(cs) == 3:
-                    #print(f"{left} = {self.visit(ctx.getChild(2))}")
-                    return self.visit(ctx.getChild(2))
+                    if cs[2][:2] == "++":
+                        temp = self.new_temp()
+                        ident = cs[2][2:]
+                        self.code.append(f"{temp} = {ident} + 1")
+                        self.code.append(f"{cs[0]} = {temp}")
+                        return temp
+                    elif cs[2][:2] == "--":
+                        temp = self.new_temp()
+                        ident = cs[2][2:]
+                        self.code.append(f"{temp} = {ident} - 1")
+                        self.code.append(f"{cs[0]} = {temp}")
+                        return temp
+                    else:
+                        self.code.append(f"{cs[0]} = {self.visit(ctx.getChild(2))}")
+                        return self.visit(ctx.getChild(2))
+            elif len(op)>1:
+                #print(cs)
+                temp = self.new_temp()
+                self.code.append(f"{temp} = {cs[0]} {op[0]} {cs[2]}")
+                #self.code.append(f"{temp} = {cs[0]} {op} {self.visit(cs1[2])}")
+                return temp
             else:
                 temp = self.new_temp()
                 #print(f"{temp} = {self.visit(cs1[0])} {op} {self.visit(cs1[2])}")
@@ -401,11 +420,11 @@ class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisi
             self.code.append(f"{temp} = {left} {op} {right}")
             return temp
         else:
-           # print(cs)
             return cs[0]
 
     def visitUnary(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.UnaryContext):
         if ctx.Identifier():
+            print("?")
             if ctx.getText()[-2:] == "++":
                 ident = ctx.Identifier().getText()
                 self.code.append(f"{ident} = {ident} + 1")
