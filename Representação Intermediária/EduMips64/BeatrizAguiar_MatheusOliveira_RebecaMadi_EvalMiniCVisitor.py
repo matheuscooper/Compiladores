@@ -403,7 +403,7 @@ class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisi
                 #print(cs)
                 temp = self.new_temp()
                 self.code.append(f"{temp} = {cs[0]} {op[0]} {cs[2]}")
-                #self.code.append(f"{temp} = {cs[0]} {op} {self.visit(cs1[2])}")
+                self.code.append(f"{cs[0]} = {temp}")
                 return temp
             else:
                 temp = self.new_temp()
@@ -424,7 +424,6 @@ class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisi
 
     def visitUnary(self, ctx: BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCParser.UnaryContext):
         if ctx.Identifier():
-            print("?")
             if ctx.getText()[-2:] == "++":
                 ident = ctx.Identifier().getText()
                 self.code.append(f"{ident} = {ident} + 1")
@@ -500,6 +499,9 @@ def EduMIPS64(codigo):
         if op1 not in temp_var_map.keys() and not op1.isdigit():
             if "$"+op1 in temp_var_map.values():
                 reg1 = "$" + op1
+            elif "$"+op1 in temp_vars:
+                reg1 =  get_temp_var()
+                temp_var_map[reg1[1:]] = reg1
             else:
                 reg1 = load(op1)
         elif op1.isdigit():
@@ -509,13 +511,20 @@ def EduMIPS64(codigo):
         if op2 not in temp_var_map.keys() and not op2.isdigit():
             if "$"+op2 in temp_var_map.values():
                 reg2 = "$" + op2
+            elif "$"+op2 in temp_vars:
+                reg2 =  get_temp_var()
+                temp_var_map[reg2[1:]] = reg2
             else:
                 reg2 = load(op2)
         elif op2.isdigit():
             reg2 = op2
         else:
             reg2 = temp_var_map[op2]
-        if d not in temp_var_map.keys() and not d.isdigit():
+        if reg1.isdigit():
+            reg3 = reg2
+        elif reg2.isdigit():
+            reg3 = reg1
+        elif d not in temp_var_map.keys() and not d.isdigit():
             reg3 = get_temp_var()
             temp_var_map[d] = reg3
             
@@ -547,7 +556,14 @@ def EduMIPS64(codigo):
                 if '+' in expr:
                     op1, op2 = expr.split('+')
                     reg1, reg2, reg3 = validate(op1, op2, dest)
-                    text_section.append(f'ADD {reg3}, {reg1}, {reg2}')
+                    if (reg3 == reg1 and reg2.isdigit()) or (reg3 == reg2 and reg1.isdigit()):
+                        if reg2.isdigit():
+                            text_section.append(f'ADDI {reg3}, {reg1}, {reg2}')
+                        else:
+                            text_section.append(f'ADDI {reg3}, {reg2}, {reg1}')
+                    else:
+                        text_section.append(f'ADD {reg3}, {reg1}, {reg2}')
+
                     return reg3
                 elif '-' in expr:
                     
@@ -576,12 +592,12 @@ def EduMIPS64(codigo):
                 else:
                     reg = ""
                     if expr.isdigit():
-                        map_vars.clear(dest)
                         allocate_variable(dest, map_vars[dest], expr) 
+                        map_vars[dest] = -1
                         #text_section.append(f'LI {reg}, {expr}')
                     elif expr not in variables.keys():
-                        map_vars.clear(expr)
                         allocate_variable(expr, map_vars[expr], '0')
+                        map_vars[expr] = -1
                     elif expr in variables.keys():
                         reg = load(expr)
                         temp_var_map[variables[expr]] = reg
@@ -601,13 +617,13 @@ def EduMIPS64(codigo):
             else:"""
             if dest not in variables.keys():
                 if src.isdigit():
-                    map_vars.clear(dest)
                     allocate_variable(dest, map_vars[dest], src)
+                    map_vars[dest] = -1
                     continue
                 else:
                     if '$'+dest not in temp_vars:
-                        map_vars.clear(dest)
                         allocate_variable(dest, map_vars[dest], '0')
+                        map_vars[dest] = -1
             if '$'+src in temp_vars:
                 text_section.append(f'SW {last_reg}, {dest}($zero)')
                 temp_var_map[dest] = last_reg
@@ -616,7 +632,7 @@ def EduMIPS64(codigo):
             print(src)
             reg = process_expression(src)
             last_reg = reg
-            if '$'+dest not in temp_vars:
+            if '$'+dest not in temp_vars or dest in variables.keys():
                 text_section.append(f'SW {reg}, {variables[dest]}($zero)')
                 temp_var_map[variables[dest]] = reg
         elif "return" in line:
@@ -627,6 +643,7 @@ def EduMIPS64(codigo):
 
     if len(data_section) < len(map_vars.keys()):
         for mv in map_vars.keys():
-            allocate_variable(mv, map_vars[mv], '0')
+            if map_vars[mv] != -1:
+                allocate_variable(mv, map_vars[mv], '0')
 
     return data_section, text_section
