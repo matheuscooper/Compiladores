@@ -460,3 +460,173 @@ class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisi
         k = [self.visit(binary) for binary in ctx.binary()]
         print(k)
         return k
+    
+
+def EduMIPS64(codigo):
+    data_section = []
+    text_section = []
+    variables = {}
+    temp_var_count = 0
+    temp_vars = ['$t0', '$t1', '$t2', '$t3', '$t4', '$t5', '$t6', '$t7', '$t8', '$t9', '$t10', '$t11', '$t12', '$t13', '$t14']
+    temp_var_map = {}
+    map_vars = {}
+    last_reg = ""
+
+
+    def get_temp_var():
+        nonlocal temp_var_count
+        if temp_var_count >= len(temp_vars):
+            
+            raise RuntimeError("Número máximo de registradores temporários excedido.")
+        reg = temp_vars[temp_var_count]
+        temp_var_count += 1
+        return reg
+
+    def load(var):
+        reg = get_temp_var()
+        text_section.append(f'LW {reg}, {variables[var]}($zero)')
+        temp_var_map[var] = reg
+        return reg
+    
+    def validate(op1, op2, d):
+        if '(' in op1:
+            op1 = op1[1:]
+        else:
+            op1 = op1.strip()
+        if ')' in op2:
+            op2 = op2[:-1]
+        else:
+            op2 = op2.strip()
+        if op1 not in temp_var_map.keys() and not op1.isdigit():
+            if "$"+op1 in temp_var_map.values():
+                reg1 = "$" + op1
+            else:
+                reg1 = load(op1)
+        elif op1.isdigit():
+            reg1 = op1
+        else:
+            reg1 = temp_var_map[op1]
+        if op2 not in temp_var_map.keys() and not op2.isdigit():
+            if "$"+op2 in temp_var_map.values():
+                reg2 = "$" + op2
+            else:
+                reg2 = load(op2)
+        elif op2.isdigit():
+            reg2 = op2
+        else:
+            reg2 = temp_var_map[op2]
+        if d not in temp_var_map.keys() and not d.isdigit():
+            reg3 = get_temp_var()
+            temp_var_map[d] = reg3
+            
+        return reg1, reg2, reg3
+    
+    def allocate_variable(var_name, var_type, initial_value):
+        if var_type == 'int':
+            variables[var_name] = var_name
+            data_section.append(f'{var_name}: .word {initial_value}')
+        elif var_type == 'char':
+            variables[var_name] = var_name
+            data_section.append(f'{var_name}: .byte {ord(initial_value)}')
+
+    for line in codigo:
+        tokens = line.split()
+        if ":" in tokens:
+            map_vars[tokens[0]] = tokens[2]
+            continue
+        if tokens[0] == 'func' and tokens[2] == 'begin':
+            text_section.append(f'{tokens[1]}:')
+        elif tokens[0] == 'func' and tokens[2] == 'end':
+            text_section.append('JR $ra')
+        elif '=' in tokens:
+            print(tokens)
+            dest = tokens[0]
+            src = "".join(tokens[2:])
+
+            def process_expression(expr):
+                if '+' in expr:
+                    op1, op2 = expr.split('+')
+                    reg1, reg2, reg3 = validate(op1, op2, dest)
+                    text_section.append(f'ADD {reg3}, {reg1}, {reg2}')
+                    return reg3
+                elif '-' in expr:
+                    
+                    op1, op2 = expr.split('-')
+                    reg1, reg2, reg3 = validate(op1, op2, dest)
+                    text_section.append(f'SUB {reg3}, {reg1}, {reg2}')
+                    return reg3
+                elif '*' in expr:
+                    op1, op2 = expr.split('*')
+                    reg1, reg2, reg3 = validate(op1, op2, dest)
+                    text_section.append(f'MULT {reg1}, {reg2}')
+                    text_section.append(f'MFLO {reg3}')
+                    return reg3
+                elif '/' in expr:
+                    op1, op2 = expr.split('/')
+                    reg1, reg2, reg3 = validate(op1, op2, dest)
+                    text_section.append(f'DIV {reg1}, {reg2}')
+                    text_section.append(f'MFLO {reg3}')
+                    return reg3
+                elif '%' in expr:
+                    op1, op2 = expr.split('%')
+                    reg1, reg2, reg3 = validate(op1, op2, dest)
+                    text_section.append(f'DIV {reg1}, {reg2}')
+                    text_section.append(f'MFHI {reg3}')
+                    return reg3
+                else:
+                    reg = ""
+                    if expr.isdigit():
+                        map_vars.clear(dest)
+                        allocate_variable(dest, map_vars[dest], expr) 
+                        #text_section.append(f'LI {reg}, {expr}')
+                    elif expr not in variables.keys():
+                        map_vars.clear(expr)
+                        allocate_variable(expr, map_vars[expr], '0')
+                    elif expr in variables.keys():
+                        reg = load(expr)
+                        temp_var_map[variables[expr]] = reg
+                    #elif len(expr) == 1 and expr.isalpha():
+                    #    allocate_variable(dest, "int", expr) 
+                        #text_section.append(f'LI {reg}, {ord(expr)}')
+                    else:
+                        raise ValueError(f"Expressão desconhecida: {expr}")
+                    return reg
+
+            """if any(op in src for op in ['+', '-', '*', '/', '%']):
+                result_reg = process_expression(src)
+                if '$'+dest not in temp_vars:
+                    text_section.append(f'SW {result_reg}, {variables[dest]}($zero)')
+                    temp_var_map[variables[dest]] = result_reg
+                print(data_section, text_section)
+            else:"""
+            if dest not in variables.keys():
+                if src.isdigit():
+                    map_vars.clear(dest)
+                    allocate_variable(dest, map_vars[dest], src)
+                    continue
+                else:
+                    if '$'+dest not in temp_vars:
+                        map_vars.clear(dest)
+                        allocate_variable(dest, map_vars[dest], '0')
+            if '$'+src in temp_vars:
+                text_section.append(f'SW {last_reg}, {dest}($zero)')
+                temp_var_map[dest] = last_reg
+                temp_var_map[src] = last_reg
+                continue
+            print(src)
+            reg = process_expression(src)
+            last_reg = reg
+            if '$'+dest not in temp_vars:
+                text_section.append(f'SW {reg}, {variables[dest]}($zero)')
+                temp_var_map[variables[dest]] = reg
+        elif "return" in line:
+            values = line.split(" ")
+            text_section.append(f'SYSCALL {values[1]}')
+        else:
+            print(f"Linha de entrada desconhecida: {line}")
+
+    if len(data_section) < len(map_vars.keys()):
+        for mv in map_vars.keys():
+            allocate_variable(mv, map_vars[mv], '0')
+
+    return data_section, text_section
