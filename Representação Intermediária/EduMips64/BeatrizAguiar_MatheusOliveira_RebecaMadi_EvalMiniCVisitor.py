@@ -474,6 +474,7 @@ def EduMIPS64(codigo):
     
     mapa_variaveis = {}
     label_counter = 0
+
     def nova_label():
         nonlocal label_counter
         label = f"label{label_counter}"
@@ -633,10 +634,10 @@ def EduMIPS64(codigo):
             r2 = carrega(b, var)
             if r1 != r2:
                 if var in mapa_registradores.keys():
-                    code.append(f"slt ${var} ${r1}, ${r2}")
+                    code.append(f"slt ${var}, ${r1}, ${r2}")
                 else:
                     r = prox()
-                    code.append(f"slt ${r} ${r1}, ${r2}")
+                    code.append(f"slt ${r}, ${r1}, ${r2}")
                     code.append(f"sw ${r}, {var}($zero)")
                     mapa_variaveis[var] = r
                     mapa_registradores[r] = var
@@ -655,10 +656,10 @@ def EduMIPS64(codigo):
             r2 = carrega(b, var)
             if r1 != r2:
                 if var in mapa_registradores.keys():
-                    code.append(f"xor ${var} ${r1}, ${r2}")
+                    code.append(f"xor ${var}, ${r1}, ${r2}")
                 else:
                     r = prox()
-                    code.append(f"xor ${r} ${r1}, ${r2}")
+                    code.append(f"xor ${r}, ${r1}, ${r2}")
                     code.append(f"sw ${r}, {var}($zero)")
                     mapa_variaveis[var] = r
                     mapa_registradores[r] = var

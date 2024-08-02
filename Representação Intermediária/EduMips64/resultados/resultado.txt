@@ -1,9 +1,9 @@
 .data
-x: word 0
-y: word 0
-z: word 0
+x: .word 0
+y: .word 0
+z: .word 0
 
-.text
+.code
 main:
 lw $t0, x($zero)
 addi $t0, $zero, 1
