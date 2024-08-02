@@ -483,9 +483,9 @@ def EduMIPS64(codigo):
 
     def declaracao(v, vl, tipo):
         if tipo == "int":
-            data.append(f"{v}: word {vl}")
+            data.append(f"{v}: .word {vl}")
         else:
-            data.append(f"{v}: asciiz {vl}")
+            data.append(f"{v}: .asciiz {vl}")
         mapa_variaveis[v] = "vazio"
     
     def prox():
