@@ -32,7 +32,7 @@ def main(argv):
             print("\n.text")
             for line in ts:
                 print(line)
-            func(ds + ts)
+            func([".data"] + ds + ["\n.text"]+ ts)
     elif argv[1] == "te":
         te = []
         with open(argv[2], 'r', encoding='utf-8') as arquivo:
@@ -47,7 +47,7 @@ def main(argv):
         print("\n.text")
         for line in ts:
             print(line)
-        func(ds + ts)
+        func([".data"] + ds + ["\n.text"]+ ts)
 
 
     
