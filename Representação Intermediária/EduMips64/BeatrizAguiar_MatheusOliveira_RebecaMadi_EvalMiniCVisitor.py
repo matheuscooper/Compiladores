@@ -716,6 +716,13 @@ def EduMIPS64(codigo):
                 code.append("else:")
                 code.append(f"NOP")
         elif "go" in linha:
+            p = codigo[i-1]
+            if "if" not in p:
+                linha = linha.replace(")", " ")
+                linha = linha.replace("(", " ")
+                linha = linha.replace("go to", "goto")
+                words = linha.split(" ")
+                code.append(f"b {words[1]}")
             continue
-            
+    code.append("SYSCALL 0")        
     return data, code
