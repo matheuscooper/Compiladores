@@ -32,6 +32,7 @@ def main(argv):
             print("\n.text")
             for line in ts:
                 print(line)
+            func(ds + ts)
     elif argv[1] == "te":
         te = []
         with open(argv[2], 'r', encoding='utf-8') as arquivo:
@@ -46,8 +47,15 @@ def main(argv):
         print("\n.text")
         for line in ts:
             print(line)
+        func(ds + ts)
 
 
     
+def func(lista):
+    with open("./resultados/resultado.txt", 'w', encoding='utf-8') as arquivo:
+            for linha in lista:
+                arquivo.write(linha)
+                arquivo.write("\n")
+
 if __name__ == '__main__':
     main(sys.argv)   

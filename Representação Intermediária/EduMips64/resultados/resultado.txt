@@ -1,0 +1,39 @@
+x: word 0
+y: word 0
+z: word 0
+main:
+lw $t0, x($zero)
+addi $t0, $zero, 1
+sw $t0, x($zero)
+lw $t1, y($zero)
+addi $t1, $zero, 10
+sw $t1, y($zero)
+lw $t2, z($zero)
+addi $t2, $zero, 1
+sw $t2, z($zero)
+
+
+t1:
+lw $t3, x($zero)
+lw $t5, y($zero)
+slt $t4 $t3, $t5
+beq $t4, $zero, t3
+
+
+t2:
+lw $t3, z($zero)
+sw $t3, z($zero)
+lw $t6, z($zero)
+lw $t7, x($zero)
+dmult $t6, $t7
+mflo $t5
+sw $t5, z($zero)
+b t1
+
+
+t3:
+lw $t7, x($zero)
+addi $t6, $zero, 1
+add $t6, $t7, $t6
+sw $t6, x($zero)
+SYSCALL 0
