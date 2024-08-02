@@ -462,188 +462,222 @@ class ThreeAddressCodeVisitor(BeatrizAguiar_MatheusOliveira_RebecaMadi_MiniCVisi
     
 
 def EduMIPS64(codigo):
-    data_section = []
-    text_section = []
-    variables = {}
-    temp_var_count = 0
-    temp_vars = ['$t0', '$t1', '$t2', '$t3', '$t4', '$t5', '$t6', '$t7', '$t8', '$t9', '$t10', '$t11', '$t12', '$t13', '$t14']
-    temp_var_map = {}
-    map_vars = {}
-    last_reg = ""
-
-
-    def get_temp_var():
-        nonlocal temp_var_count
-        if temp_var_count >= len(temp_vars):
-            
-            raise RuntimeError("Número máximo de registradores temporários excedido.")
-        reg = temp_vars[temp_var_count]
-        temp_var_count += 1
-        return reg
-
-    def load(var):
-        reg = get_temp_var()
-        text_section.append(f'LW {reg}, {variables[var]}($zero)')
-        temp_var_map[var] = reg
-        return reg
+    data = []
+    code = []
+    registradores = []
+    mapa_registradores = {}
+    for i in range(31):
+        registradores.append("t"+str(i))
+        mapa_registradores["t"+str(i)] = "vazio"
     
-    def validate(op1, op2, d):
-        if '(' in op1:
-            op1 = op1[1:]
+    mapa_variaveis = {}
+    def declaracao(v, vl, tipo):
+        if tipo == "int":
+            data.append(f"{v}: word {vl}")
         else:
-            op1 = op1.strip()
-        if ')' in op2:
-            op2 = op2[:-1]
-        else:
-            op2 = op2.strip()
-        if op1 not in temp_var_map.keys() and not op1.isdigit():
-            if "$"+op1 in temp_var_map.values():
-                reg1 = "$" + op1
-            elif "$"+op1 in temp_vars:
-                reg1 =  get_temp_var()
-                temp_var_map[reg1[1:]] = reg1
-            else:
-                reg1 = load(op1)
-        elif op1.isdigit():
-            reg1 = op1
-        else:
-            reg1 = temp_var_map[op1]
-        if op2 not in temp_var_map.keys() and not op2.isdigit():
-            if "$"+op2 in temp_var_map.values():
-                reg2 = "$" + op2
-            elif "$"+op2 in temp_vars:
-                reg2 =  get_temp_var()
-                temp_var_map[reg2[1:]] = reg2
-            else:
-                reg2 = load(op2)
-        elif op2.isdigit():
-            reg2 = op2
-        else:
-            reg2 = temp_var_map[op2]
-        if reg1.isdigit():
-            reg3 = reg2
-        elif reg2.isdigit():
-            reg3 = reg1
-        elif d not in temp_var_map.keys() and not d.isdigit():
-            reg3 = get_temp_var()
-            temp_var_map[d] = reg3
-            
-        return reg1, reg2, reg3
+            data.append(f"{v}: asciiz {vl}")
+        mapa_variaveis[v] = "vazio"
     
-    def allocate_variable(var_name, var_type, initial_value):
-        if var_type == 'int':
-            variables[var_name] = var_name
-            data_section.append(f'{var_name}: .word {initial_value}')
-        elif var_type == 'char':
-            variables[var_name] = var_name
-            data_section.append(f'{var_name}: .byte {ord(initial_value)}')
+    def prox():
+        chaves = mapa_registradores.keys()
+        for c in chaves:
+            if mapa_registradores[c] == "vazio":
+                mapa_registradores[c] = "ocupado"
+                return c
 
-    for line in codigo:
-        tokens = line.split()
-        if ":" in tokens:
-            map_vars[tokens[0]] = tokens[2]
-            continue
-        if tokens[0] == 'func' and tokens[2] == 'begin':
-            text_section.append(f'{tokens[1]}:')
-        elif tokens[0] == 'func' and tokens[2] == 'end':
-            text_section.append('JR $ra')
-        elif '=' in tokens:
-            print(tokens)
-            dest = tokens[0]
-            src = "".join(tokens[2:])
+    def carrega(a, var, ant="zero"):
+        print(a, var)
+        if a.isdigit():
+            if var in mapa_registradores.keys():
+                code.append(f"addi ${var}, ${ant}, {a}")
+                return var
+            else:
+                if var not in mapa_variaveis.keys():
+                    declaracao(a, 0, "int")
+                reg = prox()
+                mapa_registradores[reg] = var
+                mapa_variaveis[var] = reg
+                code.append(f"lw ${reg}, {var}($zero)")
+                code.append(f"addi ${reg}, ${ant}, {a}")
+                return reg
+        else:
+            if a not in mapa_registradores.keys():
+                if a not in mapa_variaveis.keys():
+                    declaracao(a, 0, "int")
+                elif mapa_variaveis[a] == "vazio":
+                    return mapa_variaveis[a]
+                reg = prox()
+                mapa_registradores[reg] = a
+                mapa_variaveis[a] = reg
+                code.append(f"lw ${reg}, {a}($zero)")
+                return reg
+            else:
+                return a
 
-            def process_expression(expr):
-                if '+' in expr:
-                    op1, op2 = expr.split('+')
-                    reg1, reg2, reg3 = validate(op1, op2, dest)
-                    if (reg3 == reg1 and reg2.isdigit()) or (reg3 == reg2 and reg1.isdigit()):
-                        if reg2.isdigit():
-                            text_section.append(f'ADDI {reg3}, {reg1}, {reg2}')
-                        else:
-                            text_section.append(f'ADDI {reg3}, {reg2}, {reg1}')
-                    else:
-                        text_section.append(f'ADD {reg3}, {reg1}, {reg2}')
-
-                    return reg3
-                elif '-' in expr:
+    def atribuicoes(words):
+        words[0] = words[0].replace(" ", "")
+        words[1] = words[1].replace(" ", "")
+        words[0] = words[0].replace("\n", "")
+        words[1] = words[1].replace("\n", "")
+        var = words[0]
+        if var in mapa_registradores.keys():
+            mapa_registradores[var] = "ocupado"
+        if "+" in words[1]:
+            a = words[1].split("+")[0]
+            b = words[1].split("+")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var, ant=r1)
+            if r1 != r2:
+                code.append(f"add ${var}, ${r1}, ${r2}")
+            if var not in mapa_registradores.keys():  
+                r = prox()
+                code.append(f"sw ${r}, {var}($zero)")
+                mapa_variaveis[var] = r
+                mapa_registradores[r] = var
+        elif "-" in words[1]:
+            a = words[1].split("-")[0]
+            b = words[1].split("-")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var)
+            if r1 != r2:
+                code.append(f"sub ${var}, ${r1}, ${r2}")
+            if var not in mapa_registradores.keys():  
+                r = prox()
+                code.append(f"sw ${r}, {var}($zero)")
+                mapa_variaveis[var] = r
+                mapa_registradores[r] = var
+        elif "*" in words[1]:
+            a = words[1].split("*")[0]
+            b = words[1].split("*")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var)
+            if r1 != r2:
+                code.append(f"dmult ${r1}, ${r2}")
+                if var in mapa_registradores.keys():
+                    code.append(f"mflo ${var}")
+                else:
+                    r = prox()
+                    code.append(f"mflo ${r}")
+                    code.append(f"sw ${r}, {var}($zero)")
+                    mapa_variaveis[var] = r
+                    mapa_registradores[r] = var
+                mapa_registradores[r1] = "vazio"
+                mapa_registradores[r2] = "vazio"
+        elif "/" in words[1]:
+            a = words[1].split("/")[0]
+            b = words[1].split("/")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var)
+            if r1 != r2:
+                code.append(f"div ${r1}, ${r2}")
+                if var in mapa_registradores.keys():
+                    code.append(f"mflo ${var}")
+                else:
+                    r = prox()
+                    code.append(f"mflo ${r}")
+                    code.append(f"sw ${r}, {var}($zero)")
+                    mapa_variaveis[var] = r
+                    mapa_registradores[r] = var
+                    mapa_registradores[r1] = "vazio"
+                    mapa_registradores[r2] = "vazio"
+        elif "%" in words[1]:
+            a = words[1].split("%")[0]
+            b = words[1].split("%")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var)
+            if r1 != r2:
+                code.append(f"div ${r1}, ${r2}")
+                if var in mapa_registradores.keys():
+                    code.append(f"mfhi ${var}")
+                else:
+                    r = prox()
+                    code.append(f"mfhi ${r}")
+                    code.append(f"sw ${r}, {var}($zero)")
+                    mapa_variaveis[var] = r
+                    mapa_registradores[r] = var
+                mapa_registradores[r1] = "vazio"
+                mapa_registradores[r2] = "vazio"
+        elif ">" in words[1] or "<" in words[1]:
+            if ">" in words[1]:
+                a = words[1].split(">")[0]
+                b = words[1].split(">")[1]
+            else:
+                a = words[1].split("<")[0]
+                b = words[1].split("<")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var)
+            if r1 != r2:
+                if var in mapa_registradores.keys():
+                    code.append(f"slt ${var} ${r1}, ${r2}")
+                else:
+                    r = prox()
+                    code.append(f"slt ${r} ${r1}, ${r2}")
+                    code.append(f"sw ${r}, {var}($zero)")
+                    mapa_variaveis[var] = r
+                    mapa_registradores[r] = var
+                mapa_registradores[r1] = "vazio"
+                mapa_registradores[r2] = "vazio"
+        elif "==" in words[1] or "!=" in words[1]:
+            if "==" in words[1]:
+                a = words[1].split("==")[0]
+                b = words[1].split("==")[1]
+            else:
+                a = words[1].split("!=")[0]
+                b = words[1].split("!=")[1]
+            a = a.replace(" ", "")
+            b = b.replace(" ", "")
+            r1 = carrega(a, var, ant="zero")
+            r2 = carrega(b, var)
+            if r1 != r2:
+                if var in mapa_registradores.keys():
+                    code.append(f"xor ${var} ${r1}, ${r2}")
+                else:
+                    r = prox()
+                    code.append(f"xor ${r} ${r1}, ${r2}")
+                    code.append(f"sw ${r}, {var}($zero)")
+                    mapa_variaveis[var] = r
+                    mapa_registradores[r] = var
+                mapa_registradores[r1] = "vazio"
+                mapa_registradores[r2] = "vazio"
+        else:
+            print(words, var)
+            if words[1] in mapa_registradores.keys():
+                if var not in mapa_variaveis.keys():
+                    declaracao(var, 0, "int")
+                code.append(f"sw ${words[1]}, {var}($zero)")
+                mapa_variaveis[var] = words[1]
+                mapa_registradores[words[1]] = var
+            else:
+                if var not in mapa_variaveis.keys():
+                    declaracao(var, 0, "int")
+                r = carrega(words[1], var)
+                code.append(f"sw ${r}, {var}($zero)")
+                mapa_variaveis[var] = r
+                mapa_registradores[r] = var
                     
-                    op1, op2 = expr.split('-')
-                    reg1, reg2, reg3 = validate(op1, op2, dest)
-                    text_section.append(f'SUB {reg3}, {reg1}, {reg2}')
-                    return reg3
-                elif '*' in expr:
-                    op1, op2 = expr.split('*')
-                    reg1, reg2, reg3 = validate(op1, op2, dest)
-                    text_section.append(f'MULT {reg1}, {reg2}')
-                    text_section.append(f'MFLO {reg3}')
-                    return reg3
-                elif '/' in expr:
-                    op1, op2 = expr.split('/')
-                    reg1, reg2, reg3 = validate(op1, op2, dest)
-                    text_section.append(f'DIV {reg1}, {reg2}')
-                    text_section.append(f'MFLO {reg3}')
-                    return reg3
-                elif '%' in expr:
-                    op1, op2 = expr.split('%')
-                    reg1, reg2, reg3 = validate(op1, op2, dest)
-                    text_section.append(f'DIV {reg1}, {reg2}')
-                    text_section.append(f'MFHI {reg3}')
-                    return reg3
-                else:
-                    reg = ""
-                    if expr.isdigit():
-                        allocate_variable(dest, map_vars[dest], expr) 
-                        map_vars[dest] = -1
-                        #text_section.append(f'LI {reg}, {expr}')
-                    elif expr not in variables.keys():
-                        allocate_variable(expr, map_vars[expr], '0')
-                        map_vars[expr] = -1
-                    elif expr in variables.keys():
-                        reg = load(expr)
-                        temp_var_map[variables[expr]] = reg
-                    #elif len(expr) == 1 and expr.isalpha():
-                    #    allocate_variable(dest, "int", expr) 
-                        #text_section.append(f'LI {reg}, {ord(expr)}')
-                    else:
-                        raise ValueError(f"Expressão desconhecida: {expr}")
-                    return reg
 
-            """if any(op in src for op in ['+', '-', '*', '/', '%']):
-                result_reg = process_expression(src)
-                if '$'+dest not in temp_vars:
-                    text_section.append(f'SW {result_reg}, {variables[dest]}($zero)')
-                    temp_var_map[variables[dest]] = result_reg
-                print(data_section, text_section)
-            else:"""
-            if dest not in variables.keys():
-                if src.isdigit():
-                    allocate_variable(dest, map_vars[dest], src)
-                    map_vars[dest] = -1
-                    continue
-                else:
-                    if '$'+dest not in temp_vars:
-                        allocate_variable(dest, map_vars[dest], '0')
-                        map_vars[dest] = -1
-            if '$'+src in temp_vars:
-                text_section.append(f'SW {last_reg}, {dest}($zero)')
-                temp_var_map[dest] = last_reg
-                temp_var_map[src] = last_reg
-                continue
-            print(src)
-            reg = process_expression(src)
-            last_reg = reg
-            if '$'+dest not in temp_vars or dest in variables.keys():
-                text_section.append(f'SW {reg}, {variables[dest]}($zero)')
-                temp_var_map[variables[dest]] = reg
-        elif "return" in line:
-            values = line.split(" ")
-            text_section.append(f'SYSCALL {values[1]}')
-        else:
-            print(f"Linha de entrada desconhecida: {line}")
+        
 
-    if len(data_section) < len(map_vars.keys()):
-        for mv in map_vars.keys():
-            if map_vars[mv] != -1:
-                allocate_variable(mv, map_vars[mv], '0')
-
-    return data_section, text_section
+    for linha in codigo:
+        if "begin" in linha:
+            l = linha.split(" ")
+            code.append(l[1]+":")
+            #a implementar
+            continue
+        elif " = " in linha:
+            print("linha: ", linha)
+            atribuicoes(linha.split("="))
+            
+    return data, code
