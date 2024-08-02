@@ -466,11 +466,21 @@ def EduMIPS64(codigo):
     code = []
     registradores = []
     mapa_registradores = {}
+    labels = []
+    
     for i in range(31):
         registradores.append("t"+str(i))
         mapa_registradores["t"+str(i)] = "vazio"
     
     mapa_variaveis = {}
+    label_counter = 0
+    def nova_label():
+        nonlocal label_counter
+        label = f"label{label_counter}"
+        label_counter += 1
+        labels.append(label)
+        return label
+
     def declaracao(v, vl, tipo):
         if tipo == "int":
             data.append(f"{v}: word {vl}")
@@ -528,7 +538,10 @@ def EduMIPS64(codigo):
             a = a.replace(" ", "")
             b = b.replace(" ", "")
             r1 = carrega(a, var, ant="zero")
-            r2 = carrega(b, var, ant=r1)
+            if r1 == var:
+                r2 = carrega(b, var, ant=r1)
+            else:
+                r2 = carrega(b, var)
             if r1 != r2:
                 code.append(f"add ${var}, ${r1}, ${r2}")
             if var not in mapa_registradores.keys():  
@@ -667,17 +680,42 @@ def EduMIPS64(codigo):
                 mapa_variaveis[var] = r
                 mapa_registradores[r] = var
                     
-
+    for linha, i in zip(codigo, range(len(codigo))):
+        linha = linha.replace("\n", "")
         
-
-    for linha in codigo:
-        if "begin" in linha:
-            l = linha.split(" ")
-            code.append(l[1]+":")
+        if "begin" in linha or (":" in linha and "int" not in linha and "char" not in linha):
+            if ":" in linha:
+                code.append("\n")
+                if linha[-1] not in labels:
+                    labels.append(linha[-1])
+                    code.append(linha)
+                else:
+                    code.append(linha)
+            else:
+                l = linha.split(" ")
+                code.append(l[1]+":")
             #a implementar
             continue
         elif " = " in linha:
-            print("linha: ", linha)
             atribuicoes(linha.split("="))
+        elif "if" in linha:
+            linha = linha.replace(")", " ")
+            linha = linha.replace("(", " ")
+            linha = linha.replace("go to", "goto")
+            words = linha.split(" ")
+            words = [w for w in words if w != ""]
+            print(words)
+            p = codigo[i+1]
+            if "go" in p:
+                p = p.replace("go to", "goto")
+                p = p.replace("\n", "")
+                pw = p.split(" ")
+                code.append(f"beq ${words[1]}, $zero, {pw[1]}")
+            else:
+                code.append(f"beq ${words[1]}, $zero, else")
+                code.append("else:")
+                code.append(f"NOP")
+        elif "go" in linha:
+            continue
             
     return data, code
